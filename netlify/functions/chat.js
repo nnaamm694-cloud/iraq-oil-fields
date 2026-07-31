@@ -54,9 +54,16 @@ exports.handler = async function (event) {
   }
 
   let question = "";
+  let history = [];
   try {
     const body = JSON.parse(event.body || "{}");
     question = (body.question || "").toString().slice(0, 1000);
+    if (Array.isArray(body.history)) {
+      history = body.history.slice(-20).map(h => ({
+        role: h.role === "model" ? "model" : "user",
+        text: (h.text || "").toString().slice(0, 2000)
+      }));
+    }
   } catch (e) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "طلب غير صالح" }) };
   }
@@ -66,12 +73,18 @@ exports.handler = async function (event) {
 
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+    const contents = history.map(h => ({
+      role: h.role === "model" ? "model" : "user",
+      parts: [{ text: h.text }]
+    }));
+    contents.push({ role: "user", parts: [{ text: question }] });
+
     const resp = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ role: "user", parts: [{ text: question }] }],
+        contents,
         generationConfig: { temperature: 0.4, maxOutputTokens: 1000 }
       })
     });
