@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>خريطة الحقول النفطية والغازية العراقية</title>
+<meta name="description" content="خريطة تفاعلية تعرض الحقول النفطية والغازية في العراق مع بياناتها الجيولوجية والتشغيلية">
+<link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============== الهيدر ============== -->
+<header class="site-header">
+  <div class="header-top">
+    <div class="brand">
+      <img src="icons/favicon.svg" alt="شعار الموقع">
+      <div class="brand-text">
+        <h1>خريطة الحقول النفطية والغازية العراقية</h1>
+        <span>بيانات جيولوجية وتشغيلية تفاعلية لحقول العراق</span>
+      </div>
+    </div>
+
+    <div class="header-search" id="headerSearchWrap">
+      <input type="text" id="globalSearch" placeholder="ابحث باسم الحقل، المحافظة، التكوين، أو الصخر المصدري…">
+      <button class="search-clear" id="searchClear" aria-label="مسح البحث">×</button>
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+
+    <div class="header-actions">
+      <button class="icon-btn" id="sidebarToggleMobile" title="الفلاتر" aria-label="الفلاتر">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 6H20M7 12H17M10 18H14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- شريط الإحصاءات -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-card"><div class="stat-num" id="statTotal">–</div><div class="stat-label">إجمالي الحقول</div></div>
+    <div class="stat-card"><div class="stat-num" id="statProducing">–</div><div class="stat-label">حقول منتجة</div></div>
+    <div class="stat-card"><div class="stat-num" id="statGas">–</div><div class="stat-label">حقول غازية</div></div>
+    <div class="stat-card"><div class="stat-num" id="statGov">–</div><div class="stat-label">محافظات</div></div>
+    <div class="stat-card"><div class="stat-num" id="statFormations">–</div><div class="stat-label">تكوينات منتجة</div></div>
+    <div class="stat-card"><div class="stat-num" id="statSourceRocks">–</div><div class="stat-label">صخور مصدرية</div></div>
+  </div>
+</header>
+
+<!-- ============== التخطيط الرئيسي ============== -->
+<div class="app-layout" id="appLayout">
+
+  <!-- الشريط الجانبي: الفلاتر + قائمة الحقول -->
+  <aside class="sidebar" id="sidebar">
+    <div class="strata-rule" title="طبقات جيولوجية"></div>
+
+    <div class="filter-group">
+      <h3>المحافظة</h3>
+      <select class="filter-select" id="filterGovernorate">
+        <option value="">كل المحافظات</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <h3>نوع الحقل</h3>
+      <div class="chip-list" id="filterType"></div>
+    </div>
+
+    <div class="filter-group">
+      <h3>الحالة</h3>
+      <div class="chip-list" id="filterStatus"></div>
+    </div>
+
+    <div class="filter-group">
+      <h3>التكوين المنتج</h3>
+      <select class="filter-select" id="filterFormation">
+        <option value="">كل التكوينات</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <h3>الصخر المصدري</h3>
+      <select class="filter-select" id="filterSourceRock">
+        <option value="">كل الصخور المصدرية</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <h3>الشركة المشغّلة</h3>
+      <select class="filter-select" id="filterCompany">
+        <option value="">كل الشركات</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <h3>العمر الجيولوجي</h3>
+      <select class="filter-select" id="filterAge">
+        <option value="">كل الأعمار الجيولوجية</option>
+      </select>
+    </div>
+
+    <button class="reset-filters" id="resetFilters">إعادة ضبط كل الفلاتر</button>
+
+    <div class="results-count" id="resultsCount">—</div>
+    <div class="field-list" id="fieldList"></div>
+  </aside>
+
+  <!-- منطقة الخريطة -->
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="map-legend">
+      <span><i class="dot oil"></i> حقل نفطي</span>
+      <span><i class="dot gas"></i> حقل غازي</span>
+    </div>
+  </div>
+</div>
+
+<footer>
+  خريطة تفاعلية غير رسمية لأغراض تعليمية ومرجعية — البيانات الجيولوجية والإحداثيات بعضها تقديري ويحتاج تدقيقاً رسمياً. © خريطة الحقول النفطية العراقية
+</footer>
+
+<!-- ============== مساعد الدردشة ============== -->
+<button class="chat-toggle" id="chatToggle" aria-label="فتح المساعد">
+  <svg viewBox="0 0 24 24" fill="none"><path d="M21 11.5C21 16.75 16.75 21 11.5 21C9.9 21 8.4 20.6 7.1 19.9L3 21L4.3 17.2C3.5 15.8 3 14.2 3 12.5C3 7.25 7.25 3 12.5 3C17.75 3 21 7.25 21 11.5Z" stroke="#071B32" stroke-width="1.8"/></svg>
+</button>
+
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-head">
+    <div>
+      <h3>مساعد الحقول الجيولوجي</h3>
+      <span>اسأل عن أي حقل نفطي أو غازي في قاعدة البيانات</span>
+    </div>
+    <button class="chat-close" id="chatClose">×</button>
+  </div>
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-suggestions" id="chatSuggestions">
+    <button data-q="ما هي الصخور المصدرية في حقل شرق بغداد؟">الصخور المصدرية لشرق بغداد</button>
+    <button data-q="ما هي الحقول المنتجة من تكوين الزبير؟">حقول تكوين الزبير</button>
+    <button data-q="ما هي الحقول الغازية؟">الحقول الغازية</button>
+  </div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="اكتب سؤالك هنا…">
+    <button id="chatSend" aria-label="إرسال">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 3L11 13M21 3L14.5 21L11 13M21 3L3 9.5L11 13" stroke="#071B32" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script src="script.js"></script>
+</body>
+</html>
