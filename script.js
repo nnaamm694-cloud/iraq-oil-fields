@@ -322,16 +322,21 @@ async function sendChat() {
   // إذا لم تكن الدالة مفعّلة بعد (مثلاً أثناء التطوير المحلي أو قبل ضبط مفتاح API)،
   // نعود تلقائياً إلى محرك القواعد المحلي حتى لا يتوقف المساعد عن العمل.
   try {
-    const res = await fetch("/.netlify/functions/chat", {
+  const res = await fetch("/.netlify/functions/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: q })
+      body: JSON.stringify({ question: q, history: CHAT.history })
     });
     if (!res.ok) throw new Error("fallback");
     const data = await res.json();
     if (!data.answer) throw new Error("fallback");
     removeTypingIndicator(typingEl);
     addBotMessage(data.answer.replace(/\n/g, "<br>"), []);
+
+    CHAT.history.push({ role: "user", text: q });
+    CHAT.history.push({ role: "model", text: data.answer });
+    if (CHAT.history.length > 20) CHAT.history = CHAT.history.slice(-20);
+
     const mentioned = ALL_FIELDS.filter(f => q.includes(f.name.split(" (")[0]) || data.answer.includes(f.name.split(" (")[0]));
     if (mentioned.length) highlightOnMap(mentioned.map(f => f.id));
     return;
