@@ -285,7 +285,7 @@ function initGlobalSearch() {
    مساعد الدردشة (محرك قواعد محلي — بدون اتصال بخادم خارجي)
 --------------------------------------------------------- */
 const CHAT = {
-  panel: null, messages: null, input: null
+  panel: null, messages: null, input: null, history: []
 };
 
 function initChat() {
